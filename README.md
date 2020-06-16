@@ -12,9 +12,8 @@ hitting enpoint --> then walk through JSON output:
 ![example endpoint hit](images/build-report-demo.gif?raw=true "Example endpoint hit")
 
 **For you to build and deploy:**  
-- For development use, using Codewind is recommended - instructions to follow!
-- For production use, here are tips how to build, deploy and run this cloud-native express/node.js microservice, are in a 
-[separate BLOG here](https://medium.com/nikcanvin/how-to-build-a-docker-microservice-application-and-deploy-to-openshift-fdb0769f1b9f).
+- see [separate BLOG](https://medium.com/nikcanvin/how-to-develop-update-a-docker-microservice-in-a-git-repo-a6118da2d92f), for how to develop changes to this cloud-native express/node.js microservice in 4 simple steps.
+- see [separate BLOG](https://medium.com/nikcanvin/how-to-build-a-docker-microservice-application-and-deploy-to-openshift-fdb0769f1b9f), for how to deploy the latest microservice into production (an OpenShift Kubernetes cluster).
 
 **Only within IBM, this microservice is already deployed:**  
 - [deployed on a OpenShift cluster here](http://smart-adv-build-report-install-metrics-default.apps.riffled.os.fyre.ibm.com/).

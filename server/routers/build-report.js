@@ -1850,10 +1850,8 @@ module.exports = function (app) {
           var client = github.client(gitAuthTok,{
             hostname: 'github.ibm.com/api/v3'
           });
-        } else if ( publicOrIbmGitForBackupReport == "publicGit") {
-          var client = github.client(gitAuthTok,{
-            hostname: 'api.github.com'
-          });
+        } else {
+          var client = github.client(gitAuthTok);
         };
         var ghrepo = client.repo(repo);
         var reportId=newReport._id; reportId=reportId+".json"; console.log("- for report: "+reportId)

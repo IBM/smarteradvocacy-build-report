@@ -39,7 +39,7 @@ module.exports = function (app) {
       } 
     } else if ( publicOrIbmGitForBackupReport == "publicGit" ) {
       var repo='IBM/smarteradvocacy-build-report';
-      if ( process.env.GitNikCanvin ) { // test and use environment var if it exists (production case)
+      if ( process.env.GitHubForNikC ) { // test and use environment var if it exists (production case)
         gitAuthTok=process.env.GitHubForNikC;
       } 
     } 

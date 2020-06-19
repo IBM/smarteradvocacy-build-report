@@ -30,14 +30,29 @@ module.exports = function (app) {
     console.log("START - build report")
 
     //// START set up credentials ////////////
-    if ( process.env.IbmGitNikCanvin ) { // test and use environment var if it exists (production case)
-      var gitAuthTok=process.env.IbmGitNikCanvin; console.log("--- GitToken secret = "+gitAuthTok);
-    } else if ( req.query.GitToken ) { // test and use request parameter var if it exists (local dev case)
-      var gitAuthTok = req.query.GitToken; console.log("--- GitToken request parameter = "+gitAuthTok);
+    var publicOrIbmGitForBackupReport = "publicGit" // "ibmGit"
+    var gitAuthTok="";
+    if ( publicOrIbmGitForBackupReport == "ibmGit" ) {
+      var repo='smarteradvocacy/build-report';
+      if ( process.env.IbmGitNikCanvin ) { // test and use environment var if it exists (production case)
+        gitAuthTok=process.env.IbmGitNikCanvin;
+      } 
+    } else if ( publicOrIbmGitForBackupReport == "publicGit" ) {
+      var repo='IBM/smarteradvocacy-build-report';
+      if ( process.env.GitNikCanvin ) { // test and use environment var if it exists (production case)
+        gitAuthTok=process.env.GitHubForNikC;
+      } 
+    } 
+    if ( req.query.GitToken ) {// test and use request parameter var if it exists (local dev case)
+      gitAuthTok = req.query.GitToken; 
+    }
+    if ( gitAuthTok ) {
+      console.log("--- GitToken request parameter = "+gitAuthTok);
     } else { // error case
       console.log("ERROR - Git access crendentials were not set");
       res.send("ERROR - Git access crendentials were not set");
     }
+
     if ( process.env.CouchDbUsername && process.env.CouchDbPassword ) { // test and use environment var if it exists (production case)
       var username=process.env.CouchDbUsername; console.log("--- couch username secret = "+username);
       var password=process.env.CouchDbPassword; console.log("--- couch password secret = "+password);
@@ -115,18 +130,21 @@ module.exports = function (app) {
 
     function getRepoPublicDocs() {
       return new Promise(resolve => {
-        console.log("START: getRepoPublicDocs"); console.log("--- DEBUG reportId = "+reportId)
+        console.log("START: getRepoPublicDocs"); console.log("--- DEBUG reportId = "+reportId); console.log("--- DEBUG gitAuthTok = "+gitAuthTok)
         var previousBackupReportsArray=[];//[{value: 'test'}];
-        var client = github.client(gitAuthTok,{
-          hostname: 'github.ibm.com/api/v3'
-        });
-        var repo='smarteradvocacy/build-report';
-        var ghrepo = client.repo(repo);
+        if ( publicOrIbmGitForBackupReport == "ibmGit" ) {
+          var client = github.client(gitAuthTok,{
+            hostname: 'github.ibm.com/api/v3'
+          });
+        } else {
+          var client = github.client(gitAuthTok);
+        }
+        var ghrepo = client.repo(repo); console.log("--- DEBUG repo = "+repo)
         //console.log(newReport)
         ghrepo.contents('public', function(err, gitRepoPublicDocs, headers) {
           if (err) { 
             console.log (err);
-            previousBackupReportsArray.push("repo/public folder not_found")
+            previousBackupReportsArray.push(repo+"/public folder not_found")
             resolve(previousBackupReportsArray)
           } else { 
             var backupReportFound="no"
@@ -144,6 +162,7 @@ module.exports = function (app) {
               }
               previousBackupReportsArray.push(tempObj)
             }
+            console.log("--- DEBUG previousBackupReportsArray:"); console.log(previousBackupReportsArray)
             resolve(previousBackupReportsArray)
           }
         });
@@ -1827,10 +1846,15 @@ module.exports = function (app) {
     async function backupReport(newReport){
       return new Promise(resolve => {
         console.log("START - backupReport");
-        var client = github.client(gitAuthTok,{
-          hostname: 'github.ibm.com/api/v3'
-        });
-        var repo='smarteradvocacy/build-report';
+        if ( publicOrIbmGitForBackupReport == "ibmGit") {
+          var client = github.client(gitAuthTok,{
+            hostname: 'github.ibm.com/api/v3'
+          });
+        } else if ( publicOrIbmGitForBackupReport == "publicGit") {
+          var client = github.client(gitAuthTok,{
+            hostname: 'api.github.com'
+          });
+        };
         var ghrepo = client.repo(repo);
         var reportId=newReport._id; reportId=reportId+".json"; console.log("- for report: "+reportId)
         var docName="public/"+reportId; console.log(docName)
@@ -1849,10 +1873,13 @@ module.exports = function (app) {
     function removeBackupReport(reportDetailsObj) {
       return new Promise(resolve => {
         console.log ("--- START: removeBackupReport - with: "+reportDetailsObj.name+" with sha: "+reportDetailsObj.sha)
-        var repo='smarteradvocacy/build-report';
-        var client = github.client(gitAuthTok,{
-          hostname: 'github.ibm.com/api/v3'
-        });
+        if ( publicOrIbmGitForBackupReport == "ibmGit") {
+          var client = github.client(gitAuthTok,{
+            hostname: 'github.ibm.com/api/v3'
+          });
+        } else {
+          var client = github.client(gitAuthTok);
+        }
         var ghrepo = client.repo(repo);
         ghrepo.deleteContents("public/"+reportDetailsObj.name, 'remove previous report', reportDetailsObj.sha, function(err, data, headers) {
           if (err) { console.log(err)} else { 
@@ -1869,11 +1896,15 @@ module.exports = function (app) {
     async function getBackupReportFromGithub(latestReportSha) {
       return new Promise(async resolve => {
         console.log ("--- START: getBackupReportFromGithub - with blob sha: "+latestReportSha)
-
+        if ( publicOrIbmGitForBackupReport == "ibmGit") {
+          var octokitBaseUrl="https://api.github.ibm.com"
+        } else if ( publicOrIbmGitForBackupReport == "publicGit") {
+          var octokitBaseUrl="https://api.github.com"
+        }
         const { Octokit } = require("@octokit/rest");
         const octokit = new Octokit({ 
           auth: gitAuthTok,
-          baseUrl: 'https://api.github.ibm.com'
+          baseUrl: octokitBaseUrl
         });
         //const { userData } = await octokit.request("/user");
         // const { data } = await octokit.repos.getContents({
@@ -1941,7 +1972,7 @@ module.exports = function (app) {
           } else if ( reportType == "YouTubeChannel" ) {
             console.log("--- DEBUG building new type of report: "+reportType)
             var newReport = await buildNewYouTubeChannelReport(latestReport,newGetDataDocIds, currentDateTimeKey); // the function is paused here until the promise is fulfilled
-            //await putReportIntoDB(newReport); // put report into couch db
+            await putReportIntoDB(newReport); // put report into couch db
           }
 
           if ( runMode === "production" ) {
@@ -1966,7 +1997,6 @@ module.exports = function (app) {
         }
       }
     }
-
 
     run();
   });

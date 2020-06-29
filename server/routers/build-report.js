@@ -42,8 +42,8 @@ module.exports = function (app) {
       if ( process.env.GitHubForNikC ) { // test and use environment var if it exists (production case)
         gitAuthTok=process.env.GitHubForNikC;
       } 
-    } 
-    if ( req.query.GitToken ) {// test and use request parameter var if it exists (local dev case)
+    }
+    if ( req.query.GitToken && req.query.GitToken!= "[PASTE]" ) {// test and use request parameter var if it exists (local dev case)
       gitAuthTok = req.query.GitToken; 
     }
     if ( gitAuthTok ) {
@@ -1913,10 +1913,15 @@ module.exports = function (app) {
 
         //const { dataValue } = await octokit.request("GET /repos/smarteradvocacy/build-report/git/blobs/19f1ab2975779c8a37248f1c9b9c3bb8f6a81737");
         const { data } = await octokit.git.getBlob({
-          owner: "smarteradvocacy",
-          repo: "build-report",
+          owner: "IBM",
+          repo: "smarteradvocacy-build-report",
           file_sha: latestReportSha
         });
+        // const { data } = await octokit.git.getBlob({
+        //   owner: "smarteradvocacy",
+        //   repo: "build-report",
+        //   file_sha: latestReportSha
+        // });
         let buff = Buffer.from(data.content, 'base64');  
         let text = buff.toString('utf-8');
         var latestReport=JSON.parse(text);
